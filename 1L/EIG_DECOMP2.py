@@ -110,7 +110,7 @@ def EIG_DECOMP_main(U0_set,pi):
 	np.save('theta_array'+str(pi),theta)
 	np.save('val_array'+str(pi),val)
 	np.save('count_array'+str(pi),count) 
-	np.save('count2_array'+str(pi),count) 
+	np.save('count2_array'+str(pi),count2) 
 	np.save('ratio_array'+str(pi),count)  
 	
 	# Return the weights, eigenvalues, and meridional wavenumber.

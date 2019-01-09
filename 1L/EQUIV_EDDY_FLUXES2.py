@@ -26,7 +26,7 @@ pe = 1		# Number of processors
 
 # Initialise tests
 
-Nu = 20;
+Nu = 4;
 
 #test_set = np.array((50.,60.,70.))
 #test_set = np.array((50.,100.,200.))
@@ -52,11 +52,13 @@ def EEF_main(set_,pi):
 	E_array = np.zeros((NU))	
 	M_array = np.zeros((NU,N,N))
 	N_array = np.zeros((NU,N,N))
+	Mu_array = np.zeros((NU,N))
+	Munorm_array = np.zeros((NU,N))
 
 	# Now start the loop over each forcing index.
 	for ui in range(0,NU):
 
-		# Redefine U0 and H0.
+		# Redefine U0 and H0
 		#sigma = set_[ui]
 		Umag = set_[ui]
  
@@ -81,17 +83,17 @@ def EEF_main(set_,pi):
 		h = h / AmpF_nd
 		
 		# In order to calculate the vorticities of the system, we require full (i.e. BG + forced response) u and eta.
-		h_full = np.zeros((N,N,Nt))
-		u_full = np.zeros((N,N,Nt))
-		for j in range(0,N):
-			h_full[j,:,:] = h[j,:,:] + H0_nd[j]
-			u_full[j,:,:] = u[j,:,:] + U0_nd[j]
+		#h_full = np.zeros((N,N,Nt))
+		#u_full = np.zeros((N,N,Nt))
+		#for j in range(0,N):
+		#	h_full[j,:,:] = h[j,:,:] + H0_nd[j]
+		#	u_full[j,:,:] = u[j,:,:] + U0_nd[j]
 
 		#==
 
 		# Correlations (can do before or after energy)
-		M_array[ui,:,:] = corr.M(u,v,T_nd)
-		N_array[ui,:,:] = corr.N(u,v,T_nd)
+		#M_array[ui,:,:] = corr.M(u,v,T_nd)
+		#N_array[ui,:,:] = corr.N(u,v,T_nd)
 
 		#==
 
@@ -108,6 +110,13 @@ def EEF_main(set_,pi):
 
 		E_array[ui] = diagnostics.timeAverage1D(KE_tot,T_nd,Nt) 
 
+		# Momentum 
+		#==========
+	
+		uu, uv, vv = momentum.fluxes(u,v)
+
+		Mu, Mv, Mu_array[ui,:], Mv_xav = momentum.footprint(uu,uv,vv,x_nd,T_nd,dx_nd,dy_nd,N,Nt)
+
 		#import matplotlib.pyplot as plt
 		#plt.plot(KE_tot);plt.show()
 		# Normalise by energy 
@@ -116,38 +125,45 @@ def EEF_main(set_,pi):
 		#==
 	
 		# Calculate PV fields and PV fluxes.
-		PV_prime, PV_full, PV_BG = PV.potentialVorticity(u,v,h,u_full,h_full,H0_nd,U0_nd,N,Nt,dx_nd,dy_nd,f_nd,Ro)
-		uq, Uq, uQ, UQ, vq, vQ = PV.fluxes(u,v,U0_nd,PV_prime,PV_BG,N,Nt)
-		P, P_xav = PV.footprint(uq,Uq,uQ,UQ,vq,vQ,x_nd,T_nd,dx_nd,dy_nd,N,Nt)	
+		#PV_prime, PV_full, PV_BG = PV.potentialVorticity(u,v,h,u_full,h_full,H0_nd,U0_nd,N,Nt,dx_nd,dy_nd,f_nd,Ro)
+		#uq, Uq, uQ, UQ, vq, vQ = PV.fluxes(u,v,U0_nd,PV_prime,PV_BG,N,Nt)
+		#P, P_xav = PV.footprint(uq,Uq,uQ,UQ,vq,vQ,x_nd,T_nd,dx_nd,dy_nd,N,Nt)	
 
-		EEF_array[ui,:], l_PV = PV.EEF(P_xav,y_nd,y_nd[y0_index],y0_index,dy_nd,N)
+		#EEF_array[ui,:], l_PV = PV.EEF(P_xav,y_nd,y_nd[y0_index],y0_index,dy_nd,N)
 
 		#==
 
+		# Repeat process with normalised velocities.
+
 		u = u / np.sqrt(E_array[ui]); v = v / np.sqrt(E_array[ui]); h = h / np.sqrt(E_array[ui])
 
+		uu, uv, vv = momentum.fluxes(u,v)
+
+		Mu, Mv, Munorm_array[ui,:], Mv_xav = momentum.footprint(uu,uv,vv,x_nd,T_nd,dx_nd,dy_nd,N,Nt)
+
 		# In order to calculate the vorticities of the system, we require full (i.e. BG + forced response) u and eta.
-		h_full = np.zeros((N,N,Nt))
-		u_full = np.zeros((N,N,Nt))
-		for j in range(0,N):
-			h_full[j,:,:] = h[j,:,:] + H0_nd[j]
-			u_full[j,:,:] = u[j,:,:] + U0_nd[j]
+		#h_full = np.zeros((N,N,Nt))
+		#u_full = np.zeros((N,N,Nt))
+		#for j in range(0,N):
+		#	h_full[j,:,:] = h[j,:,:] + H0_nd[j]
+		#	u_full[j,:,:] = u[j,:,:] + U0_nd[j]
 
 		#==
 	
 		# Calculate PV fields and PV fluxes.
-		PV_prime, PV_full, PV_BG = PV.potentialVorticity(u,v,h,u_full,h_full,H0_nd,U0_nd,N,Nt,dx_nd,dy_nd,f_nd,Ro)
-		uq, Uq, uQ, UQ, vq, vQ = PV.fluxes(u,v,U0_nd,PV_prime,PV_BG,N,Nt)
-		P, P_xav = PV.footprint(uq,Uq,uQ,UQ,vq,vQ,x_nd,T_nd,dx_nd,dy_nd,N,Nt)	
+		#PV_prime, PV_full, PV_BG = PV.potentialVorticity(u,v,h,u_full,h_full,H0_nd,U0_nd,N,Nt,dx_nd,dy_nd,f_nd,Ro)
+		#uq, Uq, uQ, UQ, vq, vQ = PV.fluxes(u,v,U0_nd,PV_prime,PV_BG,N,Nt)
+		#P, P_xav = PV.footprint(uq,Uq,uQ,UQ,vq,vQ,x_nd,T_nd,dx_nd,dy_nd,N,Nt)	
 
-		EEFnorm_array[ui,:], l_PV = PV.EEF(P_xav,y_nd,y_nd[y0_index],y0_index,dy_nd,N)
+		#EEFnorm_array[ui,:], l_PV = PV.EEF(P_xav,y_nd,y_nd[y0_index],y0_index,dy_nd,N)
 
-	np.save('EEF_array'+str(pi),EEF_array)
-	np.save('EEFnorm_array'+str(pi),EEFnorm_array)
-	np.save('M_array'+str(pi),M_array)
-	np.save('N_array'+str(pi),N_array)
+	#np.save('EEF_array'+str(pi),EEF_array)
+	#np.save('EEFnorm_array'+str(pi),EEFnorm_array)
+	#np.save('M_array'+str(pi),M_array)
+	#np.save('N_array'+str(pi),N_array)
 	np.save('E_array'+str(pi),E_array)
-	
+	np.save('Mu_array'+str(pi),Mu_array)
+	np.save('Munorm_array'+str(pi),Munorm_array)
 
 if __name__ == '__main__':
 	jobs = []
@@ -160,11 +176,13 @@ if __name__ == '__main__':
 		p.join()
 
 # Collect results, output in individual files
-parallelDiags.buildArray('EEF_array',Nu,pe)
-parallelDiags.buildArray('EEFnorm_array',Nu,pe)
-parallelDiags.buildArray('M_array',Nu,pe)
-parallelDiags.buildArray('N_array',Nu,pe)
+#parallelDiags.buildArray('EEF_array',Nu,pe)
+#parallelDiags.buildArray('EEFnorm_array',Nu,pe)
+#parallelDiags.buildArray('M_array',Nu,pe)
+#parallelDiags.buildArray('N_array',Nu,pe)
 parallelDiags.buildArray('E_array',Nu,pe)
+parallelDiags.buildArray('Mu_array',Nu,pe)
+parallelDiags.buildArray('Munorm_array',Nu,pe)
 
 elapsed = time.time() - start
 elapsed = np.ones(1) * elapsed

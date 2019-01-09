@@ -28,13 +28,13 @@ def footprint(uu,uv,vv,x_nd,T_nd,dx_nd,dy_nd,N,Nt):
 # A function that calculates the momentum footprint of the 1L SW solution as produced by RSW.py	
 	
 	# Time-averaging
-	uu = timeAverage(uu,T_nd,Nt);
-	uv = timeAverage(uv,T_nd,Nt);
-	vv = timeAverage(vv,T_nd,Nt);
+	uu = timeAverage(uu,T_nd,Nt)
+	uv = timeAverage(uv,T_nd,Nt)
+	vv = timeAverage(vv,T_nd,Nt)
 
 	# Two footprint terms to calculate
-	Mu = - diff(uu,1,1,dx_nd) - diff(uv,0,0,dy_nd);
-	Mv = - diff(uv,1,1,dx_nd) - diff(vv,0,0,dy_nd);
+	Mu = - diff(uu,1,1,dx_nd) - diff(uv,0,0,dy_nd)
+	Mv = - diff(uv,1,1,dx_nd) - diff(vv,0,0,dy_nd)
 
 	Mu = extend(Mu);
 	Mv = extend(Mv);

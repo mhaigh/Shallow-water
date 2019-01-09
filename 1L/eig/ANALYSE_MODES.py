@@ -1,4 +1,4 @@
-# analyseModes.py
+# ANALYSE_MODES.py
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,12 +8,13 @@ from core.diagnostics import diff
 
 #=======================================================
 
-m1 = np.load('mode1.npy')
-m2 = np.load('mode2.npy')
-m3 = np.load('mode3.npy')
-m4 = np.load('mode4.npy')
+path = "eig/"
+m1 = np.load(path+'mode1.npy')
+m2 = np.load(path+'mode2.npy')
+m3 = np.load(path+'mode3.npy')
+m4 = np.load(path+'mode4.npy')
 
-theta = np.load('theta0123.npy')
+theta = np.load(path+'theta0123.npy')
 
 m1 = np.real(theta[0]*m1)
 m2 = np.real(theta[1]*m2)
