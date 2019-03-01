@@ -50,7 +50,7 @@ plt.plot(U0,m_max[0,],label="50 days",linewidth=1.2); plt.plot(U0,m_max[1,],labe
 plt.xlim((-0.3,0.5)); 
 plt.xlabel('U0',fontsize=fs+4)
 plt.xticks(fontsize=fs)
-plt.text(-.25,.9*np.max(m_max),r'$max\left(\langle\mathcal{M}\rangle\right)$',fontsize=fs+8)
+plt.text(-.25,.9*np.max(m_max),r'$\mathcal{M}_{0}$',fontsize=fs+8)
 plt.yticks(fontsize=fs)
 plt.grid(); plt.legend()
 
@@ -59,7 +59,8 @@ plt.plot(U0,mnorm_max[0,],label="50 days",linewidth=1.2); plt.plot(U0,mnorm_max[
 plt.xlim((-0.3,0.5)); 
 plt.xlabel('U0',fontsize=fs+4)
 plt.xticks(fontsize=fs)
-plt.text(-.25,1.*np.max(mnorm_max),r'$max\left(\langle \hat{\mathcal{M}}\rangle\right)$',fontsize=fs+8)
+plt.text(-.25,1.*np.max(mnorm_max),r'$\hat{\mathcal{M}}_{0}$',fontsize=fs+8)
+#plt.text(-.25,1.*np.max(mnorm_max),r'$max\left(\langle \hat{\mathcal{M}}\rangle\right)$',fontsize=fs+8)
 plt.yticks(fontsize=fs)
 plt.grid(); plt.legend()
 

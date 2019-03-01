@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 
 BC = 'FREE-SLIP'	# Two boundary condition choices at north and south boundaries: NO-SLIP or FREE-SLIP 
 
-N = 257		# Number of gridpoints
+N = 129		# Number of gridpoints
 
 Lx = 3840000.		# Zonal lengthscale (m)
 Ly = 3840000.		# Meridional lengthscale (m)
@@ -35,24 +35,24 @@ beta = 2.0e-11     	# Planetary vorticity gradient (m-1 s-1)
 # Other physical parameters
 #=======================================================
 
-g = 9.81			# Acceleration due to gravity (m s-2)
+g = 9.81	# Acceleration due to gravity (m s-2)
 gamma = 4.0e-8		# Linear friction (s-1)
-nu = 100.			# Eddy viscosity (m2 s-1)
+nu = 100.	# Eddy viscosity (m2 s-1)
 
 # Background flow
 #=======================================================
 
 # Keep the unused options commented out.
 
-BG = 'UNIFORM'			# Options: UNIFORM, SHEAR, QUADRATIC, GAUSSIAN, LAPGAUSS, ZERO.
+BG = 'GAUSSIAN'			# Options: UNIFORM, SHEAR, QUADRATIC, GAUSSIAN, LAPGAUSS, ZERO.
 
 # Uniform options
-Umag = 0.0688 #0.0688, -0.0233, 0.0213
+Umag = -0.08 #0.0688, -0.0233, 0.0213
 
 # Gaussian jet options
-#Umag = 0.8				# Jet max speed
-#sigma = 0.02 * 3840000.0	# Jet width
-#JET_POS = 'CENTER'
+Umag = 0.8				# Jet max speed
+sigma = 0.02 * 3840000.0	# Jet width
+JET_POS = 'CENTER'
 
 # Shear options
 #Umag = 100.0;
@@ -90,13 +90,13 @@ errorPhys = False     	# Print error of full solutions
 errorSpec = False		# Print error of spectral solutions
 
 doEnergy = False				# Energy
-doPV = True					# Calculate potential vorticity
+doPV = False					# Calculate potential vorticity
 doFootprints = True			# Calculate footprints, requires findPV = True.
 doEEFs = True					# Calculate equivalent eddy fluxes, require findFootprints = True.
 footprintComponents = False		# If true, calculates the footprint in terms of its components.
 doMomentum = False
 doThickness = False
-doCorr = True
+doCorr = False
 
 # Initialise all these variables as none; even if they are not calculated, they are still called by the ouput module.
 PV_prime = None; PV_full = None; PV_BG = None; Pq = None; Pq_xav = None; EEFq = None
@@ -185,7 +185,7 @@ elif Fpos == 'SOUTH':
 elif Fpos == 'USER':
 	y0_index = int(N/2) + int(1.5*N*sigma/Ly)# - int(N/4); # - sigma * 25./16.
 y0 = y[y0_index]
-print(y0/Ly);
+#print(y0/Ly);
 # Note that the forcing itself is defined in terms of dimensionless parameters, so is defined at the end of initialisation. Need to do the same for the background flow.
 
 # Time parameters

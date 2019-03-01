@@ -91,6 +91,90 @@ def plotSolutions(u,v,eta,N,x_grid,y_grid,row,nrows,string):
 	plt.grid();
 	plt.colorbar()
 
+
+#====================================================
+
+# plotSSH
+def plotSSH(h,N,x_grid,y_grid,strings):
+# Function that saves plots of the solutions (including PV) separately.
+
+
+	# Prepare data
+	h1 = h[:,:,0]; h2 = h[:,:,1]; h3 = h[:,:,2]
+
+	h1lim = np.max(np.abs(h1)); h2lim = np.max(np.abs(h2)); h3lim = np.max(np.abs(h3)); 
+	
+	h1 /= h1lim; h2 /= h2lim; h3 /= h3lim
+
+
+	# Plotting params
+	fs = 18
+	x_ticks = (-1./2,-1./4,0,1./4,1./2)
+	y_ticks = (-1./2,-1./4,0,1./4,1./2)
+
+	max_str = ['max=' + str(round(h1lim,4)), 'max=' + str(round(h2lim,4)), 'max=' + str(round(h3lim,4))];
+
+	# Define width ratio of each subplot
+	grsp = gs.GridSpec(1,3,width_ratios=[1,1,1.2])
+	x_grid = x_grid[0:N]
+
+	cmap = 'bwr'
+	#cmap = 'jet'
+
+	lm = .5 
+
+	# Now plots
+	#==========
+	
+	plt.subplot(grsp[0,0])	
+	plt.pcolor(x_grid, y_grid, h1, cmap=cmap,vmin=-lm,vmax=lm)
+	plt.yticks(y_ticks,fontsize=fs)
+	plt.axis([x_grid.min(), x_grid.max(), y_grid.min(), y_grid.max()])
+
+	plt.xlabel('x',fontsize=fs+2)
+	plt.xticks(x_ticks,fontsize=fs)
+	plt.ylabel('y',fontsize=fs+2)
+
+	plt.text(0.4,0.4,r'$h^{\prime}$',color='k',fontsize=fs+12)
+	plt.text(-0.4,0.4,strings[0],color='k',fontsize=fs+12)
+	plt.text(-0.4,-0.4,max_str[0],color='k',fontsize=fs+4)
+
+	plt.grid()
+
+	#==
+
+	plt.subplot(grsp[0,1])	
+	plt.pcolor(x_grid, y_grid, h2, cmap=cmap,vmin=-lm,vmax=lm);
+	plt.yticks(y_ticks,fontsize=0)
+	plt.axis([x_grid.min(), x_grid.max(), y_grid.min(), y_grid.max()]);
+
+	plt.text(0.4,0.4,r'$h^{\prime}$',color='k',fontsize=fs+12)
+	plt.text(-0.4,0.4,strings[1],color='k',fontsize=fs+12)
+	plt.text(-0.4,-0.4,max_str[1],color='k',fontsize=fs+4)
+
+	plt.xlabel('x',fontsize=fs+2)
+	plt.xticks(x_ticks,fontsize=fs)
+
+	plt.grid()
+
+	#==
+
+	plt.subplot(grsp[0,2])	
+	plt.pcolor(x_grid, y_grid, h3, cmap=cmap,vmin=-lm,vmax=lm)
+	plt.axis([x_grid.min(), x_grid.max(), y_grid.min(), y_grid.max()]);
+	plt.yticks(y_ticks,fontsize=0);
+
+	plt.xlabel('x',fontsize=fs+2);
+	plt.xticks(x_ticks,fontsize=fs);
+
+	plt.text(0.4,0.4,r'$h^{\prime}$',color='k',fontsize=fs+12)
+	plt.text(-0.4,0.4,strings[2],color='k',fontsize=fs+12)
+	plt.text(-0.4,-0.4,max_str[2],color='k',fontsize=fs+4)
+
+	plt.grid()
+
+	plt.colorbar()
+
 #====================================================
 
 # plotSolutionsAmpPhase

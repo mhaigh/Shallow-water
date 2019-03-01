@@ -240,7 +240,7 @@ def diff(f,d,p,delta):
 			df[:,1:dimx-1] = f[:,2:dimx] - f[:,0:dimx-2];
 
 			df[:,0] = 2 * (f[:,1] - f[:,0]);
-			df[:,dimx-1] = 2 * (f[:,0] - f[:,dimx-2]);
+			df[:,dimx-1] = 2 * (f[:,dimx-1] - f[:,dimx-2]);
 		
 		elif d == 2:
 
@@ -530,6 +530,19 @@ def specError(utilde_nd,vtilde_nd,etatilde_nd,Ftilde1_nd,Ftilde2_nd,Ftilde3_nd,a
 
 	return error1,error2,error3;
 	
+
+#====================================================
+
+# fullFlow
+def fullFlow(f,F):
+	'''Given eddy field f, and BG field F (which only has dependence on y),
+	return the full flow field.'''
+
+	f_full = np.zeros(f.shape)
+	for j in range(0,np.shape(f)[0]):
+		f_full[j,] = f[j,] + F[j]
+
+	return f_full
 
 #====================================================
 

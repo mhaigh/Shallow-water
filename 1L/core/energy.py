@@ -244,10 +244,10 @@ def E_anomaly_EIG(u_vec,v_vec,eta_vec,H0_nd,U0_nd,Ro,y_nd,dy_nd):
 
 #=========================================================
 # KE
-def KE(u_full,v,h_full,x_nd,y_nd,dx_nd,dy_nd,N):
+def KE(u,v,h,x_nd,y_nd,dx_nd,dy_nd,N):
 # Outputs the KE
 
-	KE = 0.5 * (u_full**2 + v**2) * h_full
+	KE = 0.5 * (u**2 + v**2) * h
 
 	KE_tot = np.trapz(np.trapz(KE,x_nd[0:N],dx_nd,axis=1),y_nd,dy_nd,axis=0)
 
@@ -327,7 +327,8 @@ def KEspectrum(u,v,K,y,T,Nt,N):
 def budgetForcing(u,v,h,F1,F2,F3,Ro,N,T,omega,Nt):
 	''' Calculate time-dependent and time-mean energy budget due to forcing.
 	Make sure to use full u, v and h fields. Contribution from 
-	background terms will be removed after time averaging.'''
+	background terms will be removed after time averaging.
+	This will produce the same time-mean as the below function.'''
 
 	F1t = timeDep(F1,T,omega,Nt)
 	F2t = timeDep(F2,T,omega,Nt)
@@ -361,6 +362,7 @@ def budgetForcing2(U0,H0,u,v,h,F1,F2,F3,Ro,N,T,omega,Nt):
 	Ef = (H * u + h * U + h * u) * F1t + (H * v + h * v) * F2t + (0.5 * (2 * U * u + u**2 + v**2) + h / Ro) * F3t
 
 	Ef_av = timeAverage(Ef,T,Nt)
+
 
 	return Ef, Ef_av
 
@@ -420,12 +422,65 @@ def budgetDissipation2(U0,H0,u,v,h,Ro,Re,gamma,dx,dy,T,Nt,N):
 			H[:,i,ti] = H0
 			U[:,i,ti] = U0
 
-	Ed = (H * u + 2 * U * h + u * h) * ((uxx + uyy) / Re - gamma * u / Ro) + (H * v + v * h) * ((vxx + vyy) / Re - gamma * v / Ro)
+	Ed = (H * u + U * h + u * h) * ((uxx + uyy) / Re - gamma * u / Ro) + (H * v + v * h) * ((vxx + vyy) / Re - gamma * v / Ro)
 	# This omits a couple of terms that average to zero.
 
 	Ed_av = timeAverage(Ed,T,Nt)
 
 	return Ed, Ed_av
+
+#=========================================================
+
+def budgetDissipation3(U0,H0,u,v,h,Ro,Re,gamma,dx,dy,T,Nt,N):
+	''' Calculate time-dependent and time-mean energy budget due to dissipation.
+	Make sure to use full u, v and h fields. Contribution from background terms
+	will be removed after time averaging. This function makes sure background isn't
+	subject to viscosity/drag.'''
+
+# Contribution from dissipation terms, if we assume it only acts upon eddy flow, is h_full * u_full * u. 
+# This separates this function from the previous two.
+
+	uxx = np.zeros(u.shape)
+	uyy = np.zeros(u.shape)
+	vxx = np.zeros(u.shape)
+	vyy = np.zeros(u.shape)
+
+	for ti in range(0,Nt):
+
+		uyy[:,:,ti] = diff(diff(u[:,:,ti],0,0,dy),0,0,dy)
+		uxx[:,:,ti] = diff(diff(u[:,:,ti],1,1,dx),1,1,dx)
+
+		vyy[:,:,ti] = diff(diff(v[:,:,ti],0,0,dy),0,0,dy)
+		vxx[:,:,ti] = diff(diff(v[:,:,ti],1,1,dx),1,1,dx)
+
+	H = np.zeros(u.shape)
+	U = np.zeros(u.shape)
+	for ti in range(0,Nt):
+		for i in range(0,N):
+			H[:,i,ti] = H0
+			U[:,i,ti] = U0
+
+	# Extra lines that look at contributions to dissipation of energy. 
+	#Ed_drag = - (U + u) * (H + h) * gamma * u / Ro - v * (H + h) * gamma * v / Ro
+	#Ed_diss = (U + u) * (H + h) * (uxx + uyy) / Re + v * (H + h) * (vxx + vyy) / Re
+
+	#e1 = timeAverage(Ed_drag,T,Nt)	
+	#e2 = timeAverage(Ed_diss,T,Nt)
+	#plt.subplot(121)
+	#plt.contourf(e1); plt.colorbar()
+	#plt.subplot(122)
+	#plt.contourf(e2); plt.colorbar()
+	#plt.show()
+
+
+	Ed = (U + u) * (H + h) * ((uxx + uyy) / Re - gamma * u / Ro) + v * (H + h) * ((vxx + vyy) / Re - gamma * v / Ro)
+	# This omits a couple of terms that average to zero.
+
+	Ed_av = timeAverage(Ed,T,Nt)
+
+	return Ed, Ed_av
+
+
 
 #========================================================= 
 
@@ -435,142 +490,25 @@ def budgetFlux(u,v,h,Ro,dx,dy,T,Nt):
 	background terms will be removed after time averaging.'''
 	
 	E = 0.5 * h * (u**2 + v**2) + h**2 / Ro
-	
+
+	uEflux = np.zeros(u.shape)
+	vEflux = np.zeros(u.shape)
 	Eflux = np.zeros(u.shape)
+
 	for ti in range(0,Nt):
-		Eflux[:,:,ti] = - diff(u[:,:,ti]*E[:,:,ti],1,1,dx) - diff(v[:,:,ti]*E[:,:,ti],0,0,dy)
+
+		uEflux[:,:,ti] = u[:,:,ti]*E[:,:,ti]
+		vEflux[:,:,ti] = v[:,:,ti]*E[:,:,ti]
+
+		Eflux[:,:,ti] = - diff(uEflux[:,:,ti],1,1,dx) - diff(vEflux[:,:,ti],0,0,dy)
 	
 	Eflux_av = timeAverage(Eflux,T,Nt)
+	uEflux_av = timeAverage(uEflux,T,Nt)
+	vEflux_av = timeAverage(vEflux,T,Nt)
 
-	return Eflux, Eflux_av
+	return Eflux, Eflux_av, uEflux_av, vEflux_av
 
 #=========================================================
-
-def ENER(b):
-
-
-
-	plt.plot(K,KEspec); plt.show()
-	u = np.load('/home/mike/Documents/GulfStream/Code/DATA/1L/' + str(FORCE) + '/' + str(BG) + '/u_' + str(Fpos) + str(N) + '.npy');
-	v = np.load('/home/mike/Documents/GulfStream/Code/DATA/1L/' + str(FORCE) + '/' + str(BG) + '/v_' + str(Fpos) + str(N) + '.npy');
-	h = np.load('/home/mike/Documents/GulfStream/Code/DATA/1L/' + str(FORCE) + '/' + str(BG) + '/h_' + str(Fpos) + str(N) + '.npy');
-	
-	I = np.complex(0,1);		# Define I = sqrt(-1)
-	
-	u = extend(u);
-	v = extend(v);
-	h = extend(h);
-	
-	# In order to calculate the energy forced into the system, we require the energy of the full system
-	etaFull = np.zeros((N,N+1,Nt));
-	uFull = np.zeros((N,N+1,Nt));
-	for j in range(0,N):
-		etaFull[j,:,:] = h[j,:,:] + H0_nd[j];
-		uFull[j,:,:] = u[j,:,:] + U0_nd[j];
-
-	# Initialise the energy arrays (Full = perturbation + BG state)
-	KEphysFull = np.zeros((N,N+1,Nt));
-	KEtotFull = np.zeros(Nt);
-	PEphysFull = np.zeros((N,N+1,Nt));
-	PEtotFull = np.zeros(Nt);
-	# Now calculate the KE and PE of the full system (i.e. including BG state) at each time.
-	for ti in range(0,Nt):
-		KEphysFull[:,:,ti] = 0.5 * (etaFull[:,:,ti]) * (uFull[:,:,ti]**2 + v[:,:,ti]**2);	# v = vFull
-		KEtotFull[ti] = np.trapz(np.trapz(KEphysFull[:,:,ti],x,dx,1),y,dy,0);
-		PEphysFull[:,:,ti] = 0.5 * g * etaFull[:,:,ti]**2;										# To keep it nd, there is no multiplicatio  by g
-		PEtotFull[ti] = np.trapz(np.trapz(PEphysFull[:,:,ti],x,dx,1),y,dy,0);
-
-	# Calculate the energies of the steady BG state
-	KE_BG = np.zeros(N);
-	PE_BG = np.zeros(N);
-	KE_BG[0:N] = 0.5 * H0_nd[0:N] * U0_nd[0:N]**2;
-	PE_BG[0:N] = 0.5 * g * H0_nd[0:N]**2;
-	# Division by Umag to normalise the BG energies
-
-	# Initialise the perturbation energy arrays
-	KEphys = np.zeros((N,N+1,Nt));
-	KEtot = np.zeros(Nt);
-	PEphys = np.zeros((N,N+1,Nt));
-	PEtot = np.zeros(Nt);
-	for j in range(0,N):
-		KEphys[j,:,:] = KEphysFull[j,:,:] - KE_BG[j];
-		PEphys[j,:,:] = PEphysFull[j,:,:] - PE_BG[j];
-
-	# A more direct alternative for calculating the energies - a useful check.
-	# These use the faster algebraic definition given in the report and do not calculate energies using TOT-BG.
-	#for j in range(0,N):
-	#	PEphys[j,:,:] = 0.5 * g * h[j,:,:] * (h[j,:,:] + 2 * H0_nd[j]);
-	#	KEphys[j,:,:] = 0.5 * etaFull[j,:,:] * (u[j,:,:]**2 + 2 * u[j,:,:] * U0_nd[j] + v[j,:,:]**2) + 0.5 * h[j,:,:] * U0_nd[j]**2;
-
-	# Normalise the energy by the forcing amplitude
-	KEphys = KEphys / AmpF_nd**3;		
-	PEphys = PEphys / AmpF_nd**2;
-
-	KE_FullTot = np.zeros(Nt);
-	PE_FullTot = np.zeros(Nt);
-
-	# Calculates the extra PE and KE in the system at each time throughout the period of the forcing
-	for ti in range(0,Nt):
-		KEtot[ti] = np.trapz(np.trapz(KEphys[:,:,ti],x_nd,dx_nd,1),y_nd,dy_nd,0);
-		PEtot[ti] = np.trapz(np.trapz(PEphys[:,:,ti],x_nd,dx_nd,1),y_nd,dy_nd,0);
-		KE_FullTot[ti] = np.trapz(np.trapz(KEphysFull[:,:,ti],x_nd,dx_nd,1),y_nd,dy_nd,0);
-		PE_FullTot[ti] = np.trapz(np.trapz(PEphysFull[:,:,ti],x_nd,dx_nd,1),y_nd,dy_nd,0);
-
-	
-	#=========================================================
-	
-	# PLOTS
-	
-	#=========================================================
-
-	# Snapshot of PE and KE perturbation
-	plt.figure(1)
-	plt.subplot(121)
-	plt.contourf(x_nd,y_nd,KEphys[:,:,ts]);
-	plt.title('KE');
-	plt.xticks((-1./2,0,1./2));
-	plt.yticks((-1./2,0,1./2));
-	plt.colorbar()
-	plt.subplot(122)
-	plt.contourf(x_nd,y_nd,PEphys[:,:,ts]);
-	plt.title('PE');
-	plt.xticks((-1./2,0,1./2));
-	plt.yticks((-1./2,0,1./2));
-	plt.colorbar()
-	plt.show()
-	
-	# Time behaviour of KE and PE perturbations
-	plt.figure(2)
-	fig, ax1 = plt.subplots()
-	ax1.plot(T_nd[:Nt], KEtot, 'b-',linewidth=2)
-	ax1.set_xlabel('TIME',fontsize=18)
-	# Make the y-axis label, ticks and tick labels match the line color.
-	ax1.set_ylabel('KE', color='b',fontsize=18)
-	ax2 = ax1.twinx()
-	ax2.plot(T_nd[:Nt], PEtot, 'r-',linewidth=2)
-	ax2.set_ylabel('PE', color='r',fontsize=18)
-	#ax3 = ax1.twinx()
-	#ax3.plot(T_nd,0.5*max(KEtot)*np.sin(T_nd),'k--',label='F amp',linewidth=2)
-	fig.tight_layout()
-	plt.savefig('/home/mike/Documents/GulfStream/Code/IMAGES/1L/' + str(FORCE) + '/' + str(BG) + '/energy_' + str(Fpos) + str(N) + '.png')
-	plt.show()
-
-	# Time behaviour of full KE and PE
-	plt.figure(2)
-	fig, ax1 = plt.subplots()
-	ax1.plot(T_nd[:Nt], KE_FullTot, 'b-',linewidth=2)
-	ax1.set_xlabel('TIME',fontsize=18)
-	# Make the y-axis label, ticks and tick labels match the line color.
-	ax1.set_ylabel('KE', color='b',fontsize=18)
-	ax1.tick_params('y', colors='b')
-	ax2 = ax1.twinx()
-	ax2.plot(T_nd[:Nt], PE_FullTot, 'r-',linewidth=2)
-	ax2.set_ylabel('PE', color='r',fontsize=18)
-	ax2.tick_params('y', colors='r')
-	#ax3 = ax1.twinx()
-	#ax3.plot(T_nd,0.5*max(KEtot)*np.sin(T_nd),'k--',label='F amp',linewidth=2)
-	fig.tight_layout()
-	plt.show()
 
 
 

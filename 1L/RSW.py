@@ -35,10 +35,9 @@ from inputFile import *
 start = time.time()
 
 def RSW_main():
+	
 	# Forcing
-
 	#plotting.forcingPlot_save(x_grid,y_grid,F3_nd[:,0:N],FORCE,BG,Fpos,N);
-
 	#F1_nd, F2_nd, F3_nd = forcing.forcingInv(Ftilde1_nd,Ftilde2_nd,Ftilde3_nd,x_nd,y_nd,dx_nd,N);
 	#F12, F22 = forcing.F12_from_F3(F3_nd,f_nd,dx_nd,dy_nd,N,N);
 	#plotting.forcingPlots(x_nd[0:N],y_nd,Ro*F1_nd,Ro*F2_nd,F3_nd,Ftilde1_nd,Ftilde2_nd,Ftilde3_nd,N);
@@ -57,15 +56,10 @@ def RSW_main():
 	#utilde_nd, vtilde_nd, etatilde_nd = diagnostics.selectModes(utilde_nd,vtilde_nd,etatilde_nd,6,False,N)
 	u, v, h = solver.SPEC_TO_PHYS(utilde_nd,vtilde_nd,etatilde_nd,T_nd,dx_nd,omega_nd,N)
 
-	plt.contourf(np.angle(h[:,:,ts])); plt.colorbar(); plt.show()
-
+	# Take real part
 	u = np.real(u)
 	v = np.real(v)
 	h = np.real(h)
-
-	#diagnostics.twoMode(utilde_nd,vtilde_nd,x_nd,N)
-	#KEspec = energy.KEspectrum(u,v,K_nd,y_nd,T_nd,Nt,N)
-	#sys.exit()
 	
 	# Normalise all solutions by the (non-dimensional) forcing amplitude. 
 	u = u / AmpF_nd
@@ -78,14 +72,9 @@ def RSW_main():
 	
 	#sys.exit()
 
-
-
 	# In order to calculate the vorticities/energies of the system, we require full (i.e. BG + forced response) u and eta.
-	h_full = np.zeros((N,N,Nt))
-	u_full = np.zeros((N,N,Nt))
-	for j in range(0,N):
-		h_full[j,:,:] = h[j,:,:] + H0_nd[j]
-		u_full[j,:,:] = u[j,:,:] + U0_nd[j]
+	u_full = diagnostics.fullFlow(u,U0_nd)
+	h_full = diagnostics.fullFlow(h,H0_nd)
 
 	#====================================================
 
@@ -100,24 +89,27 @@ def RSW_main():
 		#E_tot = KE_tot + PE_tot
 
 		Ef, Ef_av = energy.budgetForcing(u_full,v,h_full,F1_nd,F2_nd,F3_nd,Ro,N,T_nd,omega_nd,Nt)
-		Ed, Ed_av = energy.budgetForcing2(U0_nd,H0_nd,u,v,h,F1_nd,F2_nd,F3_nd,Ro,N,T_nd,omega_nd,Nt)
+		#Ef, Ef2_av = energy.budgetForcing2(U0_nd,H0_nd,u,v,h,F1_nd,F2_nd,F3_nd,Ro,N,T_nd,omega_nd,Nt)
 		#Ed, Ed_av = energy.budgetDissipation(u_full,v,h_full,Ro,Re,gamma_nd,dx_nd,dy_nd,T_nd,Nt)
 		Ed, Ed_av = energy.budgetDissipation2(U0_nd,H0_nd,u,v,h,Ro,Re,gamma_nd,dx_nd,dy_nd,T_nd,Nt,N)
-		Eflux, Eflux_av = energy.budgetFlux(u_full,v,h_full,Ro,dx_nd,dy_nd,T_nd,Nt)
+		Eflux, Eflux_av, uEflux_av, vEflux_av = energy.budgetFlux(u_full,v,h_full,Ro,dx_nd,dy_nd,T_nd,Nt)
 
+		print(np.sum(Ef_av))
+		print(np.sum(Ed_av))
 
 		plt.subplot(221)
-		plt.contourf(Ef_av); plt.colorbar()
+		plt.contourf(Ef_av); plt.grid(); plt.colorbar()
 
 		plt.subplot(222)
-		plt.contourf(Ed_av); plt.colorbar()
+		plt.contourf(Ed_av); plt.grid(); plt.colorbar()
 
 		plt.subplot(223)
-		plt.contourf(Eflux_av); plt.colorbar()
+		plt.contourf(vEflux_av); plt.grid(); plt.colorbar()
 
 		plt.subplot(224)
-		plt.contourf(-Ed_av-Ef_av); plt.colorbar();
+		plt.contourf(-Ed_av-Ef_av); plt.grid(); plt.colorbar();
 		plt.show()
+
 
 
 		#uE, vE = energy.flux(KE,u,v)
@@ -150,7 +142,7 @@ def RSW_main():
 
 		plotting_bulk.plotKMN(K,Mnorm,Nnorm,x_grid,y_grid,N,0,2,'')
 		plt.show()
-		quit()
+
 		#N_ /= diagnostics.domainInt(K,x_nd,dx_nd,y_nd,dy_nd)
 
 		N_av = np.trapz(diagnostics.extend(N_),x_nd,dx_nd,axis=1)
@@ -353,94 +345,6 @@ def RSW_main():
 	#sys.exit()
 	
 	#====================================================
-
-	if False:
-
-		# Take relevant derivatives
-		v_y = np.zeros((N,N,Nt));
-		u_y = np.zeros((N,N,Nt));
-		u_yy = np.zeros((N,N,Nt));
-		for ti in range(0,Nt):
-			v_y[:,:,ti] = diagnostics.diff(v[:,:,ti],0,0,dy_nd);
-			u_y[:,:,ti] = diagnostics.diff(u[:,:,ti],0,0,dy_nd);
-			u_yy[:,:,ti] = diagnostics.diff(u_y[:,:,ti],0,0,dy_nd);
-	
-		uv1 = v_y * u_y;
-		uv2 = v * u_yy;
-		uv3 = v * u_y
-
-
-		plt.subplot(131);
-		plt.contourf(x_nd[0:N],y_nd,v[:,:,ts]);
-		plt.grid(b=True, which='both', color='0.65',linestyle='--');
-		plt.colorbar();
-		plt.subplot(132);
-		plt.contourf(x_nd[0:N],y_nd,u_yy[:,:,ts]);
-		plt.grid(b=True, which='both', color='0.65',linestyle='--');
-		plt.colorbar();
-		plt.subplot(133);
-		plt.contourf(x_nd[0:N],y_nd,uv2[:,:,ts]);
-		plt.grid(b=True, which='both', color='0.65',linestyle='--');
-		plt.colorbar();
-		plt.show()
-
-		plt.subplot(221);
-		plt.contourf(x_nd[0:N],y_nd,uv1[:,:,20]);
-		plt.colorbar();
-		plt.grid(b=True, which='both', color='0.65',linestyle='--');
-		plt.subplot(222);
-		plt.contourf(x_nd[0:N],y_nd,uv1[:,:,100]);
-		plt.grid(b=True, which='both', color='0.65',linestyle='--');
-		plt.colorbar();
-		plt.subplot(223);
-		plt.contourf(x_nd[0:N],y_nd,uv2[:,:,20]);
-		plt.grid(b=True, which='both', color='0.65',linestyle='--');
-		plt.colorbar();
-		plt.subplot(224);
-		plt.contourf(x_nd[0:N],y_nd,uv2[:,:,100]);
-		plt.grid(b=True, which='both', color='0.65',linestyle='--');
-		plt.colorbar();
-		plt.show();
-
-		# Define initial footprint contributions (include SSH terms later)
-		P1 = diagnostics.timeAverage(uv1,T_nd,Nt);
-		P2 = diagnostics.timeAverage(uv2,T_nd,Nt);
-		P3 = diagnostics.timeAverage(uv3,T_nd,Nt);
-	
-	
-		P1 = diagnostics.extend(P1);
-		P2 = diagnostics.extend(P2);
-		P3 = diagnostics.extend(P3);
-
-		plt.subplot(121);
-		plt.contourf(x_nd,y_nd,P1);
-		plt.grid(b=True, which='both', color='0.65',linestyle='--');
-		plt.colorbar();
-		plt.subplot(122);	
-		plt.contourf(x_nd,y_nd,P2);
-		plt.grid(b=True, which='both', color='0.65',linestyle='--');
-		plt.colorbar();
-		plt.show();
-
-		# Account for H0_nd terms
-		#H0_y = diagnostics.diff(H0_nd,2,0,dy_nd);
-		#for i in range(0,N):
-		#	P1[:,i] = P1[:,i] / H0_nd[:];
-		#	P2[:,i] = P2[:,i] / H0_nd[:];
-		#	P3[:,i] = P3[:,i] * H0_y[:] / H0_nd[:]**2;
-	
-		P1 = np.trapz(P1,x_nd,dx_nd,axis=1);
-		P2 = np.trapz(P2,x_nd,dx_nd,axis=1);
-		P3 = np.trapz(P3,x_nd,dx_nd,axis=1);
-
-		plt.subplot(121);
-		#plt.plot(P1,label='P1');
-		plt.plot(P2,label='P2');
-		plt.legend();
-		plt.subplot(122);
-		plt.plot(H0_nd*P_xav);
-		plt.plot(P1+P2+P3);
-		plt.show();
 
 	# Plots
 	#====================================================

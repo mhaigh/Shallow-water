@@ -20,10 +20,11 @@ from inputFile import *
 
 #=======================================================
 
-test = 'N' # U0, y0, N
+test = 'N' # U0, y0, N, h 
+# Plot with differing U0, y0, N or h.
 
 #samples = ['16']
-samples = ['-08','00','08','16']
+samples = ['-08','08','32']
 
 #samples = ['-1','0','1.5']
 #samples = ['-1','1.5'] 				# sigma samples
@@ -52,6 +53,8 @@ for si in range(0,ns):
 	
 	sample = samples[si]
 
+	#=======================================================
+
 	# For each U0 or sigma value, we need to first load the saved solutions
 	if test == 'U0':
 		path = '/media/mike/Seagate Expansion Drive/Documents/GulfStream/RSW/DATA/1L/PAPER1/UNIFORM/'
@@ -67,6 +70,8 @@ for si in range(0,ns):
 		U0_nd = U0 / U
 		H0_nd = H0 / chi
 	
+	#=======================================================
+
 	elif test == 'y0':
 		path = '/media/mike/Seagate Expansion Drive/Documents/GulfStream/RSW/DATA/1L/PAPER1/GAUSSIAN/'
 		print(AmpF_nd)
@@ -80,9 +85,11 @@ for si in range(0,ns):
 			h_tmp = np.load(path + 'eta_y0='+sample+'.npy')[:,:,ts]
 		P[:,:,si] = np.load(path + 'P_y0='+sample+'.npy')
 		P_xav[:,si] = np.trapz(P[:,:,si],x_nd,dx_nd,axis=1);
+	
+	#=======================================================
 
 	# For each U0 or sigma value, we need to first load the saved solutions
-	if test == 'N':
+	elif test == 'N':
 
 		if True:
 			path = '/media/mike/Seagate Expansion Drive/Documents/GulfStream/RSW/DATA/1L/PAPER1/UNIFORM/'
@@ -99,6 +106,7 @@ for si in range(0,ns):
 			K[:,:,si] = corr.K(u,v,T_nd)
 			M[:,:,si] = corr.Mnorm(u,v,T_nd)
 			N_[:,:,si] = corr.Nnorm(u,v,T_nd)
+
 
 		else: 
 
@@ -118,6 +126,7 @@ for si in range(0,ns):
 		U0_nd = U0 / U
 		H0_nd = H0 / chi
 
+	#=======================================================
 
 	elif test == 'S':
 		path = '/home/mike/Documents/GulfStream/RSW/DATA/1L/STOCH/'
@@ -134,8 +143,22 @@ for si in range(0,ns):
 		# Last step: redefine U0 and H0 for each sample
 		U0, H0 = BG_state.BG_uniform(0.08,Hflat,f0,beta,g,y,N);
 		U0_nd = U0 / U
-		H0_nd = H0 / chi		
+		H0_nd = H0 / chi	
 
+	#=======================================================	
+
+	# For plotting SSH.
+	elif test == "h":
+
+		path = '/media/mike/Seagate Expansion Drive/Documents/GulfStream/RSW/DATA/1L/PAPER1/UNIFORM/'
+		U0_load = str(sample)
+		
+		h[:,:,si] = np.load(path + 'eta_U0='+U0_load+'.npy')[:,:,ts]
+
+
+	#=======================================================
+
+	# Use this loop if we need full flow, otherwise ignore.
 	if False:
 		# Calculate full flows.
 		h_full = np.zeros((N,N))
@@ -157,6 +180,9 @@ print('Plotting...')
 
 # Second, create all plots.
 
+# Set the desired loop(s) to True or False as needed. 
+# Most loops will call bulk plotting functions.
+
 # Solutions
 if False:
 	fig, axes = plt.subplots(nrows=ns,ncols=3,figsize=(22,7*ns))
@@ -177,7 +203,22 @@ if False:
 		U0_str = 'U0 = ' + str(U0)
 		plotting_bulk.plotSolutions(np.real(u[:,:,si]),np.real(v[:,:,si]),np.real(h[:,:,si]),N,x_grid,y_grid,si,ns,string)
 		plt.tight_layout(pad=0.3, w_pad=0.2, h_pad=1.0);
-		plt.savefig('fig0.png');
+		plt.savefig('fig0.png')
+
+# Solutions, h only
+if False:
+
+	h = np.real(h)
+
+	fig, axes = plt.subplots(nrows=1,ncols=3,figsize=(22,7))
+
+	strings = [r'$U_{0} = ' + str(float(sample)/100) + '$' for sample in samples] 
+
+	plotting_bulk.plotSSH(h,N,x_grid,y_grid,strings)
+	plt.tight_layout(pad=0.3, w_pad=0.2, h_pad=1.0);
+	plt.savefig('fig0.png')
+	
+
 
 # Phase & Amp
 if False:

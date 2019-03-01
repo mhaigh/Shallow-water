@@ -36,6 +36,7 @@ def buildArray(filename,Nu,pe):
 	# Determine dimension of array	
 	shape = np.shape(array_tmp)
 	yn = shape[0]
+	
 	ndim = len(shape)
 	if ndim == 1:
 		array = np.zeros((Nu), dtype = array_tmp.dtype)

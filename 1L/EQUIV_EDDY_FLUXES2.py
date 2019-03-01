@@ -1,6 +1,8 @@
 # EQUIV_EDDY_FLUXES.py
 #=======================================================
-# This is an executable code that solves the 1L shallow water system a number of times, each time storing the equivalent eddy flux.
+# This is an executable code that solves the 1L
+# shallow water system a number of times, 
+# each time storing the equivalent eddy flux.
 #=======================================================
 
 import os
